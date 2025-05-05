@@ -1,4 +1,4 @@
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useDeferredValue, useEffect, useRef, useState } from "react";
 import { Input } from "src/components/ui/input";
 import { Button } from "src/components/ui/button";
 import { cn } from "src/lib/utils";
@@ -12,6 +12,8 @@ interface ItemProps {
 }
 
 function timeAgo(timestamp: number) {
+  if (!timestamp) return "in a year";
+
   const now = new Date();
   const past = new Date(timestamp * 1000);
   const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
@@ -84,16 +86,20 @@ function Item({ id, name, status }: ItemProps): JSX.Element {
             <span className="border-r mr-1 pr-1 inline-block">
               {timeAgo(data.date)}
             </span>
-            <a
-              target="_blank"
-              href={data.articleLink}
-              className="border-r mr-1 pr-1 inline-block"
-            >
-              Article
-            </a>
-            <a target="_blank" href={data.videoLink} className="inline-block">
-              Video
-            </a>
+            {data.articleLink && (
+              <a
+                target="_blank"
+                href={data.articleLink}
+                className="border-r mr-1 pr-1 inline-block"
+              >
+                Article
+              </a>
+            )}
+            {data.videoLink && (
+              <a target="_blank" href={data.videoLink} className="inline-block">
+                Video
+              </a>
+            )}
           </div>
           <div className="flex py-3">
             {data.imageSrc ? (
@@ -177,10 +183,13 @@ function InfiniteScroll({ onIntersect }: InfiniteScrollProps): JSX.Element {
 
 export default function App(): JSX.Element {
   const pageNumberRef = useRef(0);
+
   const [hasNextPage, setHasNextPage] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPagination, setIsLoadingPagination] = useState(false);
   const [launches, setLaunches] = useState<ListProps["list"]>([]);
+
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     const fetch = async () => {
@@ -246,7 +255,12 @@ export default function App(): JSX.Element {
   return (
     <div className="container p-5 m-auto">
       <div className="mb-10">
-        <Input type="text" placeholder="Search..." />
+        <Input
+          type="text"
+          placeholder="Search..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
       <div className="h-[700px] overflow-auto">
