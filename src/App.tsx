@@ -84,7 +84,10 @@ function InfiniteScroll({ onIntersect }: InfiniteScrollProps): JSX.Element {
 }
 
 export default function App(): JSX.Element {
+  const pageNumberRef = useRef(0);
+  const [hasNextPage, setHasNextPage] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPagination, setIsLoadingPagination] = useState(false);
   const [launches, setLaunches] = useState<ListProps["list"]>([]);
 
   useEffect(() => {
@@ -100,7 +103,7 @@ export default function App(): JSX.Element {
           }
         );
         setLaunches(
-          data.map((item) => ({
+          data.map((item: Record<string, unknown>) => ({
             id: item.flight_number,
             name: item.mission_name,
             status: item.upcoming
@@ -119,6 +122,35 @@ export default function App(): JSX.Element {
     fetch();
   }, []);
 
+  const loadMore = async () => {
+    try {
+      setIsLoadingPagination(true);
+      const response = await axios.get(
+        "https://api.spacexdata.com/v3/launches",
+        {
+          params: {
+            limit: 14,
+            offset: 14 * pageNumberRef.current,
+          },
+        }
+      );
+      const data = response.data.map((item: Record<string, unknown>) => ({
+        id: item.flight_number,
+        name: item.mission_name,
+        status: item.upcoming
+          ? "upcoming"
+          : item.launch_success
+          ? "success"
+          : "failed",
+      }));
+      setLaunches((prev) => [...prev, ...data]);
+      setHasNextPage(data.length !== 0);
+      setIsLoadingPagination(false);
+    } catch (error) {
+      setIsLoadingPagination(false);
+    }
+  };
+
   return (
     <div className="container p-5 m-auto">
       <div className="mb-10">
@@ -134,9 +166,16 @@ export default function App(): JSX.Element {
           <List list={launches} />
           <InfiniteScroll
             onIntersect={() => {
-              console.log("intersect");
+              if (!hasNextPage) return;
+              pageNumberRef.current += 1;
+              loadMore();
             }}
           />
+          {isLoadingPagination && (
+            <div className="flex justify-center p-3">
+              <Spinner />
+            </div>
+          )}
         </>
       )}
     </div>
