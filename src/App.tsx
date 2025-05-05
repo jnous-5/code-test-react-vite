@@ -1,4 +1,4 @@
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { Input } from "src/components/ui/input";
 import { Button } from "src/components/ui/button";
 import { cn } from "src/lib/utils";
@@ -50,6 +50,39 @@ function List({ list }: ListProps): JSX.Element {
   );
 }
 
+interface InfiniteScrollProps {
+  onIntersect?: () => void;
+}
+
+function InfiniteScroll({ onIntersect }: InfiniteScrollProps): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const div = ref.current;
+
+    if (!div) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onIntersect?.();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 1.0,
+      }
+    );
+
+    observer.observe(div);
+
+    return () => observer.unobserve(div);
+  }, [onIntersect]);
+
+  return <div ref={ref} />;
+}
+
 export default function App(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [launches, setLaunches] = useState<ListProps["list"]>([]);
@@ -97,7 +130,14 @@ export default function App(): JSX.Element {
           <Spinner />
         </div>
       ) : (
-        <List list={launches} />
+        <>
+          <List list={launches} />
+          <InfiniteScroll
+            onIntersect={() => {
+              console.log("intersect");
+            }}
+          />
+        </>
       )}
     </div>
   );
