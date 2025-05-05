@@ -190,6 +190,15 @@ export default function App(): JSX.Element {
   const [launches, setLaunches] = useState<ListProps["list"]>([]);
 
   const [query, setQuery] = useState("");
+  const [debouncedValue, setDebouncedValue] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(query);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -235,7 +244,7 @@ export default function App(): JSX.Element {
           },
         }
       );
-      const data = response.data.map((item: Record<string, unknown>) => ({
+      const data = response.data.map((item) => ({
         id: item.flight_number,
         name: item.mission_name,
         status: item.upcoming
@@ -251,6 +260,12 @@ export default function App(): JSX.Element {
       setIsLoadingPagination(false);
     }
   };
+
+  const filteredLaunches = !debouncedValue.trim()
+    ? launches
+    : launches.filter((item) =>
+        item.name.toLowerCase().includes(debouncedValue.toLowerCase())
+      );
 
   return (
     <div className="container p-5 m-auto">
@@ -270,10 +285,12 @@ export default function App(): JSX.Element {
           </div>
         ) : (
           <>
-            <List list={launches} />
+            <List list={filteredLaunches} />
             <InfiniteScroll
               onIntersect={() => {
                 if (!hasNextPage) return;
+                if (isLoading || isLoadingPagination) return;
+                if (debouncedValue) return;
                 pageNumberRef.current += 1;
                 loadMore();
               }}
