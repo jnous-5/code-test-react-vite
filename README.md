@@ -30,7 +30,7 @@ yarn install
 yarn dev
 ```
 
-Open `http://127.0.0.1:5173` in your browser to play the game.
+Open `http://127.0.0.1:5173` in your browser to see the app.
 
 ### Build
 
