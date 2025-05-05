@@ -9,8 +9,61 @@ interface ItemProps {
   id: number;
   name: string;
   status: "upcoming" | "success" | "failed";
+  date: number;
+  articleLink: string;
+  videoLink: string;
+  description: string;
+  imageSrc: string;
 }
-function Item({ id, name, status }: ItemProps): JSX.Element {
+
+function timeAgo(timestamp: number) {
+  const now = new Date();
+  const past = new Date(timestamp * 1000);
+  const seconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  const intervals = [
+    { label: "year", seconds: 31536000 },
+    { label: "month", seconds: 2592000 },
+    { label: "day", seconds: 86400 },
+    { label: "hour", seconds: 3600 },
+    { label: "minute", seconds: 60 },
+    { label: "second", seconds: 1 },
+  ];
+
+  for (const interval of intervals) {
+    const count = Math.floor(seconds / interval.seconds);
+    if (count >= 1) {
+      return `${count} ${interval.label}${count !== 1 ? "s" : ""} ago`;
+    }
+  }
+
+  return "just now";
+}
+
+function Item({
+  id,
+  name,
+  status,
+  date,
+  articleLink,
+  videoLink,
+  description,
+  imageSrc,
+}: ItemProps): JSX.Element {
+  const [data, setData] = useState();
+
+  const fetchData = async () => {
+    try {
+      const { data } = await axios.get(
+        `https://api.spacexdata.com/v3/launches/${id}`
+      );
+      console.log(data);
+      setData(data);
+    } catch (_) {
+      // no-op
+    }
+  };
+
   return (
     <div className="p-3 border rounded shadow-md">
       <div className="flex py-1 mb-2 gap-2 font-bold text-2xl items-start">
@@ -26,7 +79,44 @@ function Item({ id, name, status }: ItemProps): JSX.Element {
           {status}
         </div>
       </div>
-      <Button className="!bg-blue-500">View</Button>
+
+      {data && (
+        <div className="">
+          <div>
+            <span className="border-r mr-1 pr-1 inline-block">
+              {timeAgo(date)}
+            </span>
+            <a
+              target="_blank"
+              href={articleLink}
+              className="border-r mr-1 pr-1 inline-block"
+            >
+              Article
+            </a>
+            <a target="_blank" href={videoLink} className="inline-block">
+              Video
+            </a>
+          </div>
+          <div className="flex py-3">
+            <img className="w-25 m-w-25" src={imageSrc} />
+            <p className="p-3">{description}</p>
+          </div>
+        </div>
+      )}
+
+      <Button
+        className="!bg-blue-500"
+        onClick={() => {
+          if (data) {
+            setData(undefined);
+            return;
+          }
+
+          fetchData();
+        }}
+      >
+        {data ? "Hide" : "View"}
+      </Button>
     </div>
   );
 }
@@ -44,6 +134,11 @@ function List({ list }: ListProps): JSX.Element {
           id={item.id}
           name={item.name}
           status={item.status}
+          date={item.date}
+          articleLink={item.articleLink}
+          videoLink={item.videoLink}
+          description={item.description}
+          imageSrc={item.imageSrc}
         />
       ))}
     </div>
@@ -103,7 +198,7 @@ export default function App(): JSX.Element {
           }
         );
         setLaunches(
-          data.map((item: Record<string, unknown>) => ({
+          data.map((item) => ({
             id: item.flight_number,
             name: item.mission_name,
             status: item.upcoming
@@ -111,10 +206,15 @@ export default function App(): JSX.Element {
               : item.launch_success
               ? "success"
               : "failed",
+            date: item.launch_date_unix,
+            articleLink: item.links.article_link,
+            videoLink: item.links.video_link,
+            description: item.details,
+            imageSrc: item.links.mission_patch,
           }))
         );
         setIsLoading(false);
-      } catch (error) {
+      } catch (_) {
         setIsLoading(false);
       }
     };
@@ -146,7 +246,7 @@ export default function App(): JSX.Element {
       setLaunches((prev) => [...prev, ...data]);
       setHasNextPage(data.length !== 0);
       setIsLoadingPagination(false);
-    } catch (error) {
+    } catch (_) {
       setIsLoadingPagination(false);
     }
   };
