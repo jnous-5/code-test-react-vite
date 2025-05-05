@@ -176,6 +176,8 @@ export default function App(): JSX.Element {
               <Spinner />
             </div>
           )}
+
+          {!hasNextPage && <p className="text-center p-3">End of list</p>}
         </>
       )}
     </div>
