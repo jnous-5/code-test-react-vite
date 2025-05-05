@@ -1,0 +1,13 @@
+// See https://containers.dev/implementors/json_reference/ for configuration reference
+{
+  "name": "React + Vite Test",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "node",
+  "containerEnv": {
+        "GIT_EDITOR": "code --wait"
+    },
+  "runArgs": ["--name", "${containerWorkspaceFolderBasename}"],
+  "postCreateCommand": "yarn install"
+}
