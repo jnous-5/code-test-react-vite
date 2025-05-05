@@ -9,11 +9,6 @@ interface ItemProps {
   id: number;
   name: string;
   status: "upcoming" | "success" | "failed";
-  date: number;
-  articleLink: string;
-  videoLink: string;
-  description: string;
-  imageSrc: string;
 }
 
 function timeAgo(timestamp: number) {
@@ -40,17 +35,14 @@ function timeAgo(timestamp: number) {
   return "just now";
 }
 
-function Item({
-  id,
-  name,
-  status,
-  date,
-  articleLink,
-  videoLink,
-  description,
-  imageSrc,
-}: ItemProps): JSX.Element {
-  const [data, setData] = useState();
+function Item({ id, name, status }: ItemProps): JSX.Element {
+  const [data, setData] = useState<{
+    date: number;
+    articleLink: string;
+    videoLink: string;
+    description: string;
+    imageSrc: string;
+  }>();
 
   const fetchData = async () => {
     try {
@@ -58,7 +50,13 @@ function Item({
         `https://api.spacexdata.com/v3/launches/${id}`
       );
       console.log(data);
-      setData(data);
+      setData({
+        date: data.launch_date_unix,
+        articleLink: data.links.article_link,
+        videoLink: data.links.video_link,
+        description: data.details,
+        imageSrc: data.links.mission_patch,
+      });
     } catch (_) {
       // no-op
     }
@@ -84,22 +82,26 @@ function Item({
         <div className="">
           <div>
             <span className="border-r mr-1 pr-1 inline-block">
-              {timeAgo(date)}
+              {timeAgo(data.date)}
             </span>
             <a
               target="_blank"
-              href={articleLink}
+              href={data.articleLink}
               className="border-r mr-1 pr-1 inline-block"
             >
               Article
             </a>
-            <a target="_blank" href={videoLink} className="inline-block">
+            <a target="_blank" href={data.videoLink} className="inline-block">
               Video
             </a>
           </div>
           <div className="flex py-3">
-            <img className="w-25 m-w-25" src={imageSrc} />
-            <p className="p-3">{description}</p>
+            {data.imageSrc ? (
+              <img className="block w-25 m-w-25" src={data.imageSrc} />
+            ) : (
+              <p className="p-3">No image yet.</p>
+            )}
+            <p className="p-3">{data.description || "No description yet."}</p>
           </div>
         </div>
       )}
@@ -134,11 +136,6 @@ function List({ list }: ListProps): JSX.Element {
           id={item.id}
           name={item.name}
           status={item.status}
-          date={item.date}
-          articleLink={item.articleLink}
-          videoLink={item.videoLink}
-          description={item.description}
-          imageSrc={item.imageSrc}
         />
       ))}
     </div>
@@ -206,11 +203,6 @@ export default function App(): JSX.Element {
               : item.launch_success
               ? "success"
               : "failed",
-            date: item.launch_date_unix,
-            articleLink: item.links.article_link,
-            videoLink: item.links.video_link,
-            description: item.details,
-            imageSrc: item.links.mission_patch,
           }))
         );
         setIsLoading(false);
