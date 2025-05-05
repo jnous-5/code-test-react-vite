@@ -279,31 +279,30 @@ export default function App(): JSX.Element {
       </div>
 
       <div className="h-[700px] overflow-auto">
-        {isLoading ? (
+        {isLoading && (
           <div className="flex justify-center">
             <Spinner />
           </div>
-        ) : (
-          <>
-            <List list={filteredLaunches} />
-            <InfiniteScroll
-              onIntersect={() => {
-                if (!hasNextPage) return;
-                if (isLoading || isLoadingPagination) return;
-                if (debouncedValue) return;
-                pageNumberRef.current += 1;
-                loadMore();
-              }}
-            />
-            {isLoadingPagination && (
-              <div className="flex justify-center p-3">
-                <Spinner />
-              </div>
-            )}
-
-            {!hasNextPage && <p className="text-center p-3">End of list</p>}
-          </>
         )}
+
+        <List list={filteredLaunches} />
+
+        <InfiniteScroll
+          onIntersect={() => {
+            if (!hasNextPage) return;
+            if (isLoading || isLoadingPagination) return;
+            if (debouncedValue) return;
+            pageNumberRef.current += 1;
+            loadMore();
+          }}
+        />
+        {isLoadingPagination && (
+          <div className="flex justify-center p-3">
+            <Spinner />
+          </div>
+        )}
+
+        {!hasNextPage && <p className="text-center p-3">End of list</p>}
       </div>
     </div>
   );
